@@ -62,7 +62,6 @@ export async function POST(request: Request) {
       .eq("id", teacherId)
       .maybeSingle();
 
-    // Show actual database error
     if (teacherError || !teacher) {
       console.error("Teacher lookup error:", teacherError);
       console.error("Teacher ID received:", teacherId);
@@ -90,10 +89,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Send invitation
+    // 5. Select correct website URL
     const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+      process.env.VERCEL_ENV === "production"
+        ? "https://school-managment-system-puce.vercel.app"
+        : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
+    // 6. Send invitation
     const { data: invitation, error: inviteError } =
       await admin.auth.admin.inviteUserByEmail(
         teacher.email,
@@ -115,7 +117,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 6. Create teacher profile
+    // 7. Create teacher profile
     const { error: profileError } = await admin
       .from("profiles")
       .upsert(
@@ -140,7 +142,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 7. Link teacher account
+    // 8. Link teacher account
     const { error: linkError } = await admin
       .from("teachers")
       .update({ user_id: invitation.user.id })
